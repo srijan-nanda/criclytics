@@ -121,6 +121,7 @@ def test_duplicate_player_records_rejected(tmp_path):
 
 def test_fractional_count_rejected(tmp_path):
     df = _valid_frame()
+    df["runs"] = df["runs"].astype(float)
     df.loc[0, "runs"] = 12.5
     with pytest.raises(ValueError, match="whole numbers"):
         load_data(_write_csv(tmp_path, df))
