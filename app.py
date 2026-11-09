@@ -161,13 +161,13 @@ st.markdown('<div class="section-heading">Performance Overview</div>',
 total_runs = int(filtered["runs"].sum())
 total_wickets = int(filtered["wickets"].sum())
 player_count = len(filtered)
-total_matches = int(filtered["matches"].max())
+max_matches_played = int(filtered["matches"].max())
 
 kpis = [
     ("PLAYERS", player_count),
     ("TOTAL RUNS", f"{total_runs:,}"),
     ("TOTAL WICKETS", total_wickets),
-    ("MATCHES RECORDED", total_matches)
+    ("MAX MATCHES PLAYED", max_matches_played)
 ]
 
 cols = st.columns(4)

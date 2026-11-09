@@ -113,7 +113,7 @@ Open `http://localhost:8501` in your browser.
 python -m pytest tests/ -v
 ```
 
-The initial test suite contains 10 automated checks covering metric calculations, player rankings, comparisons and input validation.
+The automated test suite covers metric calculations, player rankings, comparisons, CSV validation and invalid input handling.
 
 ## 📊 Analytics Methodology
 

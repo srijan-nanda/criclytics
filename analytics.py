@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 REQUIRED_COLUMNS = [
@@ -6,25 +7,56 @@ REQUIRED_COLUMNS = [
     "wickets", "balls_bowled", "runs_conceded"
 ]
 
+INTEGER_COLUMNS = REQUIRED_COLUMNS[2:]
+
 
 def load_data(file):
-    """Load and validate cricket statistics."""
-    df = pd.read_csv(file)
+    """Load cricket statistics and reject incomplete or inconsistent records."""
+    try:
+        df = pd.read_csv(file)
+    except pd.errors.EmptyDataError as error:
+        raise ValueError("The CSV file is empty.") from error
+    except (pd.errors.ParserError, UnicodeDecodeError) as error:
+        raise ValueError("The uploaded file is not a valid readable CSV.") from error
+
+    if df.empty:
+        raise ValueError("The CSV file contains no player records.")
 
     missing = set(REQUIRED_COLUMNS) - set(df.columns)
     if missing:
         raise ValueError(f"Missing columns: {', '.join(sorted(missing))}")
 
-    numeric_columns = REQUIRED_COLUMNS[2:]
+    df = df[REQUIRED_COLUMNS].copy()
 
-    for column in numeric_columns:
+    for column in ("player", "team"):
+        df[column] = df[column].astype("string").str.strip()
+        if df[column].isna().any() or df[column].eq("").any():
+            raise ValueError(f"The '{column}' column cannot contain blank values.")
+
+    duplicate_players = df["player"].str.casefold().duplicated(keep=False)
+    if duplicate_players.any():
+        names = sorted(df.loc[duplicate_players, "player"].unique().tolist())
+        raise ValueError(
+            "Each player must have one aggregated record. Duplicate players: "
+            + ", ".join(names)
+        )
+
+    for column in INTEGER_COLUMNS:
         df[column] = pd.to_numeric(df[column], errors="coerce")
 
-    if df[numeric_columns].isna().any().any():
+    if df[INTEGER_COLUMNS].isna().any().any():
         raise ValueError("Numeric columns contain missing or invalid values.")
 
-    if (df[numeric_columns] < 0).any().any():
+    values = df[INTEGER_COLUMNS].to_numpy(dtype=float)
+    if not np.isfinite(values).all():
+        raise ValueError("Numeric columns must contain finite values.")
+
+    if (df[INTEGER_COLUMNS] < 0).any().any():
         raise ValueError("Statistics cannot contain negative values.")
+
+    non_integer = (df[INTEGER_COLUMNS] % 1 != 0).any().any()
+    if non_integer:
+        raise ValueError("Match and performance count columns must contain whole numbers.")
 
     if (df["innings"] > df["matches"]).any():
         raise ValueError("Innings cannot exceed matches.")
@@ -34,6 +66,9 @@ def load_data(file):
 
     if ((df["fours"] * 4 + df["sixes"] * 6) > df["runs"]).any():
         raise ValueError("Boundary runs cannot exceed total runs.")
+
+    if ((df["fours"] + df["sixes"]) > df["balls_faced"]).any():
+        raise ValueError("The number of boundaries cannot exceed balls faced.")
 
     return df
 
@@ -52,9 +87,7 @@ def calculate_metrics(df):
         result["runs"] / result["balls_faced"].replace(0, float("nan")) * 100
     )
 
-    result["boundary_runs"] = (
-        result["fours"] * 4 + result["sixes"] * 6
-    )
+    result["boundary_runs"] = result["fours"] * 4 + result["sixes"] * 6
 
     result["boundary_percentage"] = (
         result["boundary_runs"] / result["runs"].replace(0, float("nan")) * 100
@@ -76,22 +109,38 @@ def calculate_metrics(df):
     return result.round(2)
 
 
+def _validate_limit(limit):
+    if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
+        raise ValueError("Limit must be a positive integer.")
+
+
 def top_batters(df, limit=5):
-    return df.sort_values(
-        "runs", ascending=False
-    ).head(limit)
+    """Return the highest run scorers."""
+    _validate_limit(limit)
+    return df.sort_values("runs", ascending=False).head(limit)
 
 
 def top_bowlers(df, limit=5):
+    """Return the highest wicket takers."""
+    _validate_limit(limit)
     return df[df["wickets"] > 0].sort_values(
         "wickets", ascending=False
     ).head(limit)
 
 
 def compare_players(df, player_names):
-    selected = df[df["player"].isin(player_names)]
+    """Return selected players, rejecting empty, duplicate or unknown names."""
+    names = list(player_names)
 
-    if selected["player"].nunique() != len(set(player_names)):
-        raise ValueError("One or more selected players were not found.")
+    if not names:
+        raise ValueError("Select at least one player to compare.")
+
+    if len(names) != len(set(names)):
+        raise ValueError("A player can only be selected once.")
+
+    selected = df[df["player"].isin(names)]
+
+    if selected["player"].nunique() != len(names):
+        raise ValueError("One or more selected players have not been found.")
 
     return selected
