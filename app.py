@@ -167,7 +167,7 @@ kpis = [
     ("PLAYERS", player_count),
     ("TOTAL RUNS", f"{total_runs:,}"),
     ("TOTAL WICKETS", total_wickets),
-    ("MATCHES RECORDED", total_matches)
+    ("MAX MATCHES PLAYED", max_matches_played)
 ]
 
 cols = st.columns(4)
