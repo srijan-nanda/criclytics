@@ -144,7 +144,7 @@ def test_not_outs_cannot_exceed_innings(tmp_path):
 def test_boundary_count_cannot_exceed_balls_faced(tmp_path):
     df = _valid_frame()
     df.loc[0, "fours"] = df.loc[0, "balls_faced"] + 1
-    df.loc[0, "runs"] = max(df.loc[0, "runs"], df.loc[0, "fours"] * 4)
+    df.loc[0, "runs"] = df.loc[0, "fours"] * 4 + df.loc[0, "sixes"] * 6
     with pytest.raises(ValueError, match="boundaries cannot exceed balls faced"):
         load_data(_write_csv(tmp_path, df))
 
