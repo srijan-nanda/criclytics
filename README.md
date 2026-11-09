@@ -1,5 +1,4 @@
 
-cat > README.md <<'EOF'
 # 🏏 Criclytics
 ### Every Metric Has a Story.
 
@@ -154,4 +153,3 @@ Developed as an independent Python data analytics and SportsTech portfolio proje
 **Live Application:** https://criclytics.streamlit.app/
 
 **GitHub Repository:** https://github.com/srijan-nanda/criclytics
-EOF
