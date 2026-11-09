@@ -54,7 +54,7 @@ def load_data(file):
     if (df[INTEGER_COLUMNS] < 0).any().any():
         raise ValueError("Statistics cannot contain negative values.")
 
-    non_integer = (df[INTEGER_COLUMNS] % 1 != 0).any()
+    non_integer = (df[INTEGER_COLUMNS] % 1 != 0).any().any()
     if non_integer:
         raise ValueError("Match and performance count columns must contain whole numbers.")
 
