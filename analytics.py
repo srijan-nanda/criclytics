@@ -141,6 +141,6 @@ def compare_players(df, player_names):
     selected = df[df["player"].isin(names)]
 
     if selected["player"].nunique() != len(names):
-        raise ValueError("One or more selected players were not found.")
+        raise ValueError("One or more selected players have not been found.")
 
     return selected
